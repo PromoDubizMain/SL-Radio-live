@@ -27,33 +27,45 @@ export default function RadioPlayerPage() {
 
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
-        let errorMessage = "An unknown audio error occurred.";
+        let toastMessage = "An unknown audio error occurred.";
+        let rawErrorObject: MediaError | null = null;
+        let errorCode: number | null = null;
+
         if (audioElement.error) {
-            switch (audioElement.error.code) {
+            rawErrorObject = audioElement.error;
+            errorCode = rawErrorObject.code; 
+            switch (errorCode) {
                 case MediaError.MEDIA_ERR_ABORTED:
-                    errorMessage = "Audio playback aborted by user.";
+                    toastMessage = "Audio playback aborted by user.";
                     break;
                 case MediaError.MEDIA_ERR_NETWORK:
-                    errorMessage = "A network error caused audio download to fail. Please check your internet connection and the stream availability.";
+                    toastMessage = "A network error caused audio download to fail. Please check your internet connection and the stream availability.";
                     break;
                 case MediaError.MEDIA_ERR_DECODE:
-                    errorMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
+                    toastMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
                     break;
                 case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    errorMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
+                    toastMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
                     break;
                 default:
-                    errorMessage = `An audio error occurred (code: ${audioElement.error.code}).`;
+                    toastMessage = `An audio error occurred (code: ${errorCode}).`;
             }
         }
-        console.error("Audio Element Error:", errorMessage, "Raw error object:", audioElement.error);
+
+        let consoleLogMessage = `Audio Player Error: ${toastMessage}`;
+        if (rawErrorObject) {
+          consoleLogMessage += ` (Raw MediaError code: ${errorCode})`;
+        }
+        
+        console.error(consoleLogMessage, rawErrorObject || '(No MediaError object)');
+
         toast({
           title: "Radio Error",
-          description: errorMessage,
+          description: toastMessage,
           variant: "destructive",
         });
         setIsPlaying(false);
-        setIsRadioOn(false); // Turn off radio on critical error
+        setIsRadioOn(false);
       };
 
       audioRef.current.addEventListener('error', handleAudioError);
@@ -74,13 +86,12 @@ export default function RadioPlayerPage() {
     if (isRadioOn) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); // Ensure the new source is loaded
+        audioRef.current.load(); 
       }
     } else {
       audioRef.current.pause();
       if (audioRef.current.src) {
         audioRef.current.src = '';
-         // audioRef.current.load(); // May help to fully release resources
       }
     }
   }, [isRadioOn]);
@@ -90,7 +101,7 @@ export default function RadioPlayerPage() {
 
     if (isRadioOn && isPlaying) {
       audioRef.current.play().catch(error => {
-        console.error("Error playing audio:", error);
+        console.error("Error attempting to play audio:", error);
         toast({
           title: "Playback Error",
           description: "Could not start radio playback. Ensure the stream is accessible and not blocked.",
@@ -113,9 +124,8 @@ export default function RadioPlayerPage() {
     setIsRadioOn(prev => {
       const newIsOn = !prev;
       if (!newIsOn) {
-        setIsPlaying(false); // Also turn off playback if radio is turned off
+        setIsPlaying(false); 
       } else {
-        // When turning on, if not already playing, set to play
         if (!isPlaying && audioRef.current && audioRef.current.paused) {
             setIsPlaying(true);
         }
@@ -191,4 +201,3 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
-
