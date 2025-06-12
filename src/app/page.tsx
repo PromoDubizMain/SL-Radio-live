@@ -11,10 +11,8 @@ import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
 import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
-
 const STREAM_URL = 'http://88.150.230.110:31076/stream'; // Biz FM actual stream
-// const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Placeholder for testing
-
+// const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // HTTPS Placeholder for testing
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -29,8 +27,8 @@ export default function RadioPlayerPage() {
       audioRef.current.volume = volume / 100;
 
       const handleAudioError = (event: Event) => {
-        console.error("Audio Error:", event);
         const audioElement = event.target as HTMLAudioElement;
+        console.error("Audio Element Error:", audioElement.error); // More specific error logging
         let errorMessage = "An unknown audio error occurred.";
         if (audioElement.error) {
             switch (audioElement.error.code) {
@@ -194,5 +192,3 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
-
-    
