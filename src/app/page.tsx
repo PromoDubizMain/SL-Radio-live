@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -11,8 +12,8 @@ import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
 
-const STREAM_URL = 'https://stream.bizfm.co.uk/stream'; // Biz FM actual stream
-// const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Placeholder if needed
+// const STREAM_URL = 'http://88.150.230.110:31076/stream'; // Biz FM actual stream
+const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Placeholder for testing
 
 
 export default function RadioPlayerPage() {
@@ -43,7 +44,7 @@ export default function RadioPlayerPage() {
                     errorMessage = "Audio playback aborted due to a decoding problem.";
                     break;
                 case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    errorMessage = "Audio source not supported or stream unavailable.";
+                    errorMessage = "Audio source not supported or stream unavailable. This can happen with HTTP streams on an HTTPS page (mixed content) or if the stream is down.";
                     break;
                 default:
                     errorMessage = `An audio error occurred (code: ${audioElement.error.code}).`;
@@ -76,7 +77,7 @@ export default function RadioPlayerPage() {
     if (isRadioOn) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load();
+        audioRef.current.load(); // Ensure the new source is loaded
       }
     } else {
       audioRef.current.pause();
@@ -116,10 +117,15 @@ export default function RadioPlayerPage() {
       const newIsOn = !prev;
       if (!newIsOn) {
         setIsPlaying(false); // Also turn off playback if radio is turned off
+      } else {
+        // When turning on, if not already playing, set to play
+        if (!isPlaying && audioRef.current && audioRef.current.paused) {
+            setIsPlaying(true);
+        }
       }
       return newIsOn;
     });
-  }, []);
+  }, [isPlaying]);
 
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return;
@@ -188,3 +194,5 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
+
+    
