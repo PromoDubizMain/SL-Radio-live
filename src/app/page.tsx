@@ -12,8 +12,8 @@ import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
 
-// const STREAM_URL = 'http://88.150.230.110:31076/stream'; // Biz FM actual stream
-const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Placeholder for testing
+const STREAM_URL = 'http://88.150.230.110:31076/stream'; // Biz FM actual stream
+// const STREAM_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Placeholder for testing
 
 
 export default function RadioPlayerPage() {
@@ -38,13 +38,13 @@ export default function RadioPlayerPage() {
                     errorMessage = "Audio playback aborted by user.";
                     break;
                 case MediaError.MEDIA_ERR_NETWORK:
-                    errorMessage = "A network error caused audio download to fail.";
+                    errorMessage = "A network error caused audio download to fail. Please check your internet connection and the stream availability.";
                     break;
                 case MediaError.MEDIA_ERR_DECODE:
-                    errorMessage = "Audio playback aborted due to a decoding problem.";
+                    errorMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
                     break;
                 case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    errorMessage = "Audio source not supported or stream unavailable. This can happen with HTTP streams on an HTTPS page (mixed content) or if the stream is down.";
+                    errorMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
                     break;
                 default:
                     errorMessage = `An audio error occurred (code: ${audioElement.error.code}).`;
@@ -96,7 +96,7 @@ export default function RadioPlayerPage() {
         console.error("Error playing audio:", error);
         toast({
           title: "Playback Error",
-          description: "Could not start radio playback.",
+          description: "Could not start radio playback. Ensure the stream is accessible and not blocked.",
           variant: "destructive",
         });
         setIsPlaying(false);
