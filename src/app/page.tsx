@@ -54,7 +54,7 @@ export default function RadioPlayerPage() {
 
         let consoleLogMessage = `Audio Player Error: ${toastMessage}`;
         if (rawErrorObject) {
-          consoleLogMessage += ` (Raw MediaError code: ${errorCode})`;
+          consoleLogMessage += ` (Raw MediaError code: ${errorCode}, message: ${rawErrorObject.message})`;
         }
         
         console.error(consoleLogMessage, rawErrorObject || '(No MediaError object)');
@@ -102,9 +102,15 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       audioRef.current.play().catch(error => {
         console.error("Error attempting to play audio:", error);
+        let description = "Could not start radio playback. Ensure the stream is accessible and not blocked.";
+        
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
+          description += " This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security.";
+        }
+        
         toast({
           title: "Playback Error",
-          description: "Could not start radio playback. Ensure the stream is accessible and not blocked.",
+          description: description,
           variant: "destructive",
         });
         setIsPlaying(false);
