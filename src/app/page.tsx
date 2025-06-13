@@ -27,6 +27,18 @@ export default function RadioPlayerPage() {
 
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
+        
+        // Check for specific "Empty src attribute" error when radio is already off
+        if (audioElement.error &&
+            audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED && // Code 4
+            audioElement.error.message && audioElement.error.message.includes("Empty src attribute") &&
+            !isRadioOn // Check against the state *before* this error handler might change it
+        ) {
+          console.warn("Audio element reported 'Empty src attribute' while radio was already off. Likely a cleanup artifact.", audioElement.error);
+          if (isPlaying) setIsPlaying(false); // Ensure playing state is also off
+          return; // Avoid full error handling path for this specific case
+        }
+
         let toastMessage = "An unknown audio error occurred.";
         let rawErrorObject: MediaError | null = null;
         let errorCode: number | null = null;
@@ -74,12 +86,18 @@ export default function RadioPlayerPage() {
         if (audioRef.current) {
           audioRef.current.removeEventListener('error', handleAudioError);
           audioRef.current.pause();
-          audioRef.current.src = '';
-          audioRef.current.load(); 
+          if (audioRef.current.src) {
+            audioRef.current.src = '';
+             try {
+              audioRef.current.load(); // Ensure cleanup
+            } catch (e) {
+              console.warn("Error during audio cleanup load:", e);
+            }
+          }
         }
       };
     }
-  }, [toast]);
+  }, [toast, isRadioOn, isPlaying]); // Added isRadioOn and isPlaying to dependency array for handleAudioError closure
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -91,7 +109,7 @@ export default function RadioPlayerPage() {
       }
     } else {
       audioRef.current.pause();
-      if (audioRef.current.src) {
+      if (audioRef.current.src) { // Only clear if src was set
         audioRef.current.src = '';
         audioRef.current.load(); 
       }
@@ -116,6 +134,7 @@ export default function RadioPlayerPage() {
           variant: "destructive",
         });
         setIsPlaying(false);
+        // Do not set isRadioOn to false here, error handler will do it if needed
       });
     } else {
       audioRef.current.pause();
@@ -129,21 +148,23 @@ export default function RadioPlayerPage() {
   }, [volume]);
 
   const toggleRadioOn = useCallback(() => {
-    setIsRadioOn(prev => {
-      const newIsOn = !prev;
+    setIsRadioOn(prevIsOn => {
+      const newIsOn = !prevIsOn;
       if (!newIsOn) {
-        setIsPlaying(false);
+        setIsPlaying(false); // If turning off, also stop playing
       } else {
+        // If turning on, and it's not already playing, and audio is paused, try to play
+        // The actual play command is handled by the isPlaying useEffect
         if (!isPlaying && audioRef.current && audioRef.current.paused) {
             setIsPlaying(true);
         }
       }
       return newIsOn;
     });
-  }, [isPlaying]);
+  }, [isPlaying]); // isPlaying is a dependency
 
   const togglePlayPause = useCallback(() => {
-    if (!isRadioOn) return;
+    if (!isRadioOn) return; // Can't play/pause if radio is off
     setIsPlaying(prev => !prev);
   }, [isRadioOn]);
 
@@ -209,4 +230,3 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
-
