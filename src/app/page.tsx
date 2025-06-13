@@ -33,7 +33,7 @@ export default function RadioPlayerPage() {
 
         if (audioElement.error) {
             rawErrorObject = audioElement.error;
-            errorCode = rawErrorObject.code; 
+            errorCode = rawErrorObject.code;
             switch (errorCode) {
                 case MediaError.MEDIA_ERR_ABORTED:
                     toastMessage = "Audio playback aborted by user.";
@@ -75,6 +75,7 @@ export default function RadioPlayerPage() {
           audioRef.current.removeEventListener('error', handleAudioError);
           audioRef.current.pause();
           audioRef.current.src = '';
+          audioRef.current.load(); 
         }
       };
     }
@@ -86,12 +87,13 @@ export default function RadioPlayerPage() {
     if (isRadioOn) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); 
+        audioRef.current.load();
       }
     } else {
       audioRef.current.pause();
       if (audioRef.current.src) {
         audioRef.current.src = '';
+        audioRef.current.load(); 
       }
     }
   }, [isRadioOn]);
@@ -105,7 +107,7 @@ export default function RadioPlayerPage() {
         let description = "Could not start radio playback. Ensure the stream is accessible and not blocked.";
         
         if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
-          description += " This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security.";
+          description = "Could not start radio playback. This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security. Ensure the stream is accessible via HTTPS or serve your app over HTTP during development (if your browser allows).";
         }
         
         toast({
@@ -130,7 +132,7 @@ export default function RadioPlayerPage() {
     setIsRadioOn(prev => {
       const newIsOn = !prev;
       if (!newIsOn) {
-        setIsPlaying(false); 
+        setIsPlaying(false);
       } else {
         if (!isPlaying && audioRef.current && audioRef.current.paused) {
             setIsPlaying(true);
@@ -207,3 +209,4 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
+
