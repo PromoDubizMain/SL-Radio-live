@@ -103,13 +103,16 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn) {
+      // If radio is turned on, and src is not already set, set it and load.
+      // The play/pause effect will handle the actual .play() call.
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
         audioRef.current.load();
       }
     } else {
+      // Radio is turned off, pause and clear src
       audioRef.current.pause();
-      if (audioRef.current.src) { 
+      if (audioRef.current.src) {
         audioRef.current.src = '';
         audioRef.current.load(); 
       }
@@ -120,15 +123,18 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn && isPlaying) {
-      if (audioRef.current.src === STREAM_URL && audioRef.current.paused) {
+      // Radio is on and we want to play
+      if (audioRef.current.src !== STREAM_URL) {
+        // This case should ideally be handled by the [isRadioOn] effect,
+        // but as a fallback, ensure src is set, load, and play.
+        audioRef.current.src = STREAM_URL;
+        audioRef.current.load();
         audioRef.current.play().catch(error => {
-          console.error("Error attempting to play audio:", error);
-          let description = "Could not start radio playback. Ensure the stream is accessible and not blocked.";
-          
+          console.error("Error attempting to play audio (src mismatch):", error);
+          let description = "Could not start radio playback. Stream setup issue.";
           if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
-            description = "Could not start radio playback. This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security. Ensure the stream is accessible via HTTPS or serve your app over HTTP during development (if your browser allows).";
+            description = "Could not start radio playback due to mixed content. Ensure stream is HTTPS.";
           }
-          
           toast({
             title: "Playback Error",
             description: description,
@@ -136,13 +142,27 @@ export default function RadioPlayerPage() {
           });
           setIsPlaying(false);
         });
+      } else if (audioRef.current.paused) {
+        // Source is correct, and it's paused. Load then play for stream reliability.
+        audioRef.current.load(); 
+        audioRef.current.play().catch(error => {
+          console.error("Error attempting to resume audio playback:", error);
+          toast({
+            title: "Playback Error",
+            description: "Could not resume radio playback. The stream might have been interrupted or is unavailable.",
+            variant: "destructive",
+          });
+          setIsPlaying(false);
+        });
       }
+      // If src is correct and not paused, it's already playing or attempting to.
     } else {
+      // Radio is off, OR radio is on but isPlaying is false (so, pause)
       if (!audioRef.current.paused) {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn]);
+  }, [isPlaying, isRadioOn, toast, setIsPlaying]); // Added toast and setIsPlaying
 
   useEffect(() => {
     if (audioRef.current) {
