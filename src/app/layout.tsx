@@ -4,8 +4,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Biz FM Radio',
-  description: 'Listen to Biz FM',
+  title: 'SL Radio Middle East',
+  description: 'Listen to SL Radio Middle East',
 };
 
 export default function RootLayout({

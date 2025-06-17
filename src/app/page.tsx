@@ -11,7 +11,7 @@ import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
 import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
-const STREAM_URL = 'http://88.150.230.110:31076/stream'; // Biz FM actual stream
+const STREAM_URL = 'http://88.150.230.110:31076/stream';
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -28,15 +28,14 @@ export default function RadioPlayerPage() {
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
         
-        // Check for specific "Empty src attribute" error when radio is already off
         if (audioElement.error &&
-            audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED && // Code 4
+            audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
             audioElement.error.message && audioElement.error.message.includes("Empty src attribute") &&
-            !isRadioOn // Check against the state *before* this error handler might change it
+            !isRadioOn 
         ) {
           console.warn("Audio element reported 'Empty src attribute' while radio was already off. Likely a cleanup artifact.", audioElement.error);
-          if (isPlaying) setIsPlaying(false); // Ensure playing state is also off
-          return; // Avoid full error handling path for this specific case
+          if (isPlaying) setIsPlaying(false); 
+          return; 
         }
 
         let toastMessage = "An unknown audio error occurred.";
@@ -89,7 +88,7 @@ export default function RadioPlayerPage() {
           if (audioRef.current.src) {
             audioRef.current.src = '';
              try {
-              audioRef.current.load(); // Ensure cleanup
+              audioRef.current.load(); 
             } catch (e) {
               console.warn("Error during audio cleanup load:", e);
             }
@@ -97,7 +96,7 @@ export default function RadioPlayerPage() {
         }
       };
     }
-  }, [toast, isRadioOn, isPlaying]); // Added isRadioOn and isPlaying to dependency array for handleAudioError closure
+  }, [toast, isRadioOn, isPlaying]); 
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -109,7 +108,7 @@ export default function RadioPlayerPage() {
       }
     } else {
       audioRef.current.pause();
-      if (audioRef.current.src) { // Only clear if src was set
+      if (audioRef.current.src) { 
         audioRef.current.src = '';
         audioRef.current.load(); 
       }
@@ -134,7 +133,6 @@ export default function RadioPlayerPage() {
           variant: "destructive",
         });
         setIsPlaying(false);
-        // Do not set isRadioOn to false here, error handler will do it if needed
       });
     } else {
       audioRef.current.pause();
@@ -151,20 +149,18 @@ export default function RadioPlayerPage() {
     setIsRadioOn(prevIsOn => {
       const newIsOn = !prevIsOn;
       if (!newIsOn) {
-        setIsPlaying(false); // If turning off, also stop playing
+        setIsPlaying(false); 
       } else {
-        // If turning on, and it's not already playing, and audio is paused, try to play
-        // The actual play command is handled by the isPlaying useEffect
         if (!isPlaying && audioRef.current && audioRef.current.paused) {
             setIsPlaying(true);
         }
       }
       return newIsOn;
     });
-  }, [isPlaying]); // isPlaying is a dependency
+  }, [isPlaying]); 
 
   const togglePlayPause = useCallback(() => {
-    if (!isRadioOn) return; // Can't play/pause if radio is off
+    if (!isRadioOn) return; 
     setIsPlaying(prev => !prev);
   }, [isRadioOn]);
 
@@ -179,7 +175,7 @@ export default function RadioPlayerPage() {
       <Card className="w-full max-w-md shadow-2xl rounded-xl bg-card text-card-foreground">
         <CardHeader className="items-center">
           <BizFMLogo className="w-24 h-24 text-primary" />
-          <CardTitle className="text-4xl font-headline mt-4 text-center">Biz FM</CardTitle>
+          <CardTitle className="text-3xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8 pt-6 pb-8">
           <div className="flex items-center justify-between px-2 py-3 bg-muted/50 rounded-lg">
