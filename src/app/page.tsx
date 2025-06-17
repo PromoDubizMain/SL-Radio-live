@@ -10,10 +10,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import AppLogo from '@/components/images/Logo.png'; // Import the local logo
+import AppLogo from '@/components/images/Logo.png';
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
-
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -121,25 +120,29 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn && isPlaying) {
-      audioRef.current.play().catch(error => {
-        console.error("Error attempting to play audio:", error);
-        let description = "Could not start radio playback. Ensure the stream is accessible and not blocked.";
-        
-        if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
-          description = "Could not start radio playback. This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security. Ensure the stream is accessible via HTTPS or serve your app over HTTP during development (if your browser allows).";
-        }
-        
-        toast({
-          title: "Playback Error",
-          description: description,
-          variant: "destructive",
+      if (audioRef.current.src === STREAM_URL && audioRef.current.paused) {
+        audioRef.current.play().catch(error => {
+          console.error("Error attempting to play audio:", error);
+          let description = "Could not start radio playback. Ensure the stream is accessible and not blocked.";
+          
+          if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
+            description = "Could not start radio playback. This is likely due to a mixed content issue: your app is on HTTPS, but the stream is on HTTP. Browsers block this for security. Ensure the stream is accessible via HTTPS or serve your app over HTTP during development (if your browser allows).";
+          }
+          
+          toast({
+            title: "Playback Error",
+            description: description,
+            variant: "destructive",
+          });
+          setIsPlaying(false);
         });
-        setIsPlaying(false);
-      });
+      }
     } else {
-      audioRef.current.pause();
+      if (!audioRef.current.paused) {
+        audioRef.current.pause();
+      }
     }
-  }, [isPlaying, isRadioOn, toast]);
+  }, [isPlaying, isRadioOn]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -148,23 +151,21 @@ export default function RadioPlayerPage() {
   }, [volume]);
 
   const toggleRadioOn = useCallback(() => {
-    setIsRadioOn(prevIsOn => {
-      const newIsOn = !prevIsOn;
-      if (!newIsOn) {
-        setIsPlaying(false); 
+    setIsRadioOn(prevIsRadioOn => {
+      const newIsRadioOn = !prevIsRadioOn;
+      if (newIsRadioOn) {
+        setIsPlaying(true); 
       } else {
-        if (!isPlaying && audioRef.current && audioRef.current.paused) {
-            setIsPlaying(true);
-        }
+        setIsPlaying(false); 
       }
-      return newIsOn;
+      return newIsRadioOn;
     });
-  }, [isPlaying]); 
+  }, [setIsRadioOn, setIsPlaying]); 
 
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return; 
     setIsPlaying(prev => !prev);
-  }, [isRadioOn]);
+  }, [isRadioOn, setIsPlaying]);
 
   const handleVolumeChange = useCallback((newVolume: number[]) => {
     setVolume(newVolume[0]);
