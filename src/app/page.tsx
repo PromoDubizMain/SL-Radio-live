@@ -10,9 +10,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import AppLogo from '@/components/images/Logo.png'; // Import the local logo
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
-const LOGO_URL = 'https://storage.googleapis.com/project_story_images/T7_91789b22-df8d-4919-be71-317b9c4a6c7b.png';
 
 
 export default function RadioPlayerPage() {
@@ -177,14 +177,13 @@ export default function RadioPlayerPage() {
       <Card className="w-full max-w-md shadow-2xl rounded-xl bg-card text-card-foreground">
         <CardHeader className="items-center">
           <Image 
-            src={LOGO_URL} 
+            src={AppLogo} 
             alt="SL Radio Middle East Logo" 
             width={128} 
             height={128} 
             className="rounded-lg"
             data-ai-hint="radio logo"
             priority
-            unoptimized={true}
           />
           <CardTitle className="text-xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
