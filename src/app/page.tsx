@@ -181,9 +181,10 @@ export default function RadioPlayerPage() {
             alt="SL Radio Middle East Logo" 
             width={128} 
             height={128} 
-            className="rounded-lg border-2 border-red-500"
+            className="rounded-lg"
             data-ai-hint="radio logo"
             priority
+            unoptimized={true}
           />
           <CardTitle className="text-xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
