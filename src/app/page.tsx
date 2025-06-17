@@ -181,7 +181,7 @@ export default function RadioPlayerPage() {
             alt="SL Radio Middle East Logo" 
             width={128} 
             height={128} 
-            className="rounded-lg"
+            className="rounded-lg border-2 border-red-500"
             data-ai-hint="radio logo"
             priority
           />
