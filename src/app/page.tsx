@@ -11,7 +11,7 @@ import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
 import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
-const STREAM_URL = 'http://88.150.230.110:31076/stream';
+const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -175,7 +175,7 @@ export default function RadioPlayerPage() {
       <Card className="w-full max-w-md shadow-2xl rounded-xl bg-card text-card-foreground">
         <CardHeader className="items-center">
           <BizFMLogo className="w-24 h-24 text-primary" />
-          <CardTitle className="text-3xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
+          <CardTitle className="text-2xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8 pt-6 pb-8">
           <div className="flex items-center justify-between px-2 py-3 bg-muted/50 rounded-lg">
