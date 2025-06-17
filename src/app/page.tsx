@@ -2,16 +2,18 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
-import { BizFMLogo } from "@/components/icons/BizFMLogo";
 import { useToast } from "@/hooks/use-toast";
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
+const LOGO_URL = 'https://storage.googleapis.com/project_story_images/T7_91789b22-df8d-4919-be71-317b9c4a6c7b.png';
+
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -174,8 +176,16 @@ export default function RadioPlayerPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 selection:bg-primary selection:text-primary-foreground">
       <Card className="w-full max-w-md shadow-2xl rounded-xl bg-card text-card-foreground">
         <CardHeader className="items-center">
-          <BizFMLogo className="w-24 h-24 text-primary" />
-          <CardTitle className="text-2xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
+          <Image 
+            src={LOGO_URL} 
+            alt="SL Radio Middle East Logo" 
+            width={128} 
+            height={128} 
+            className="rounded-lg"
+            data-ai-hint="radio logo"
+            priority
+          />
+          <CardTitle className="text-xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8 pt-6 pb-8">
           <div className="flex items-center justify-between px-2 py-3 bg-muted/50 rounded-lg">
