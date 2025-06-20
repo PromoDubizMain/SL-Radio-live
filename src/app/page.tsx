@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppLogo from '@/components/images/Logo.png';
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
-const NEWS_URL = 'https://promodubiz.com/updates/index.php';
+const NEWS_URL_BASE = 'https://promodubiz.com/updates/index.php';
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
@@ -21,6 +21,7 @@ export default function RadioPlayerPage() {
   const [volume, setVolume] = useState(50); // Percentage 0-100
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const [newsIframeSrc, setNewsIframeSrc] = useState(NEWS_URL_BASE);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -32,8 +33,6 @@ export default function RadioPlayerPage() {
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
         
-        // Enhanced check for "Empty src attribute" or similar "source not supported" when src is effectively empty.
-        // This error can occur during cleanup or rapid state changes.
         if (audioElement.error &&
             audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
             (!audioElement.src || audioElement.src === '' || (audioElement.error.message && audioElement.error.message.includes("Empty src attribute")))
@@ -43,7 +42,6 @@ export default function RadioPlayerPage() {
             audioElement.error
           );
           if (isPlaying) setIsPlaying(false); 
-          // No user-facing toast or console.error for this specific benign case.
           return; 
         }
 
@@ -65,8 +63,6 @@ export default function RadioPlayerPage() {
                     toastMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
                     break;
                 case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    // This case will now primarily handle genuine stream unavailability/format issues,
-                    // as "Empty src" is caught above.
                     toastMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
                     break;
                 default:
@@ -98,13 +94,12 @@ export default function RadioPlayerPage() {
           currentAudio.removeEventListener('error', handleAudioError);
           currentAudio.pause();
           if (currentAudio.src) {
-            currentAudio.src = ''; // Clear src
-            // Do NOT call currentAudio.load() here as it can trigger MEDIA_ERR_SRC_NOT_SUPPORTED on an empty src.
+            currentAudio.src = ''; 
           }
         }
       };
     }
-  }, [toast, isRadioOn, isPlaying]); // isRadioOn and isPlaying are dependencies that can trigger cleanup/re-setup
+  }, [toast, isPlaying]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -120,7 +115,6 @@ export default function RadioPlayerPage() {
       }
       if (audioRef.current.src) {
         audioRef.current.src = '';
-        // No audioRef.current.load() here either after clearing src for radio off.
       }
     }
   }, [isRadioOn]);
@@ -129,11 +123,11 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn && isPlaying) {
-      if (audioRef.current.src !== STREAM_URL) { // Ensure src is set if radio was just turned on
+      if (audioRef.current.src !== STREAM_URL) { 
         audioRef.current.src = STREAM_URL;
       }
       if (audioRef.current.paused) { 
-        audioRef.current.load(); // Important: load before play for streams
+        audioRef.current.load(); 
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
@@ -170,21 +164,16 @@ export default function RadioPlayerPage() {
     setIsRadioOn(prevIsRadioOn => {
       const newIsRadioOn = !prevIsRadioOn;
       if (newIsRadioOn) {
-        // If turning on, and it's not already playing (e.g. first time on)
-        // set isPlaying to true. The useEffect for isPlaying will handle play().
         if (!isPlaying) setIsPlaying(true); 
       } else {
-        // If turning off, always set isPlaying to false.
         setIsPlaying(false); 
       }
       return newIsRadioOn;
     });
-  }, [isPlaying]); // Added isPlaying dependency
+  }, [isPlaying]); 
 
   const togglePlayPause = useCallback(() => {
-    if (!isRadioOn) { // If radio is off, this button shouldn't change isPlaying
-        // Potentially turn radio on if play is pressed when radio is off?
-        // For now, it only works if radio is already on.
+    if (!isRadioOn) {
         return;
     }
     setIsPlaying(prevIsPlaying => !prevIsPlaying);
@@ -195,6 +184,15 @@ export default function RadioPlayerPage() {
   }, []);
   
   const VolumeIcon = volume === 0 ? VolumeX : volume <= 50 ? Volume1 : Volume2;
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setNewsIframeSrc(`${NEWS_URL_BASE}?timestamp=${new Date().getTime()}`);
+    }, 60000); // 60000 milliseconds = 1 minute
+
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+  }, []);
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 selection:bg-primary selection:text-primary-foreground">
@@ -271,7 +269,7 @@ export default function RadioPlayerPage() {
 
           <div className="mt-6 p-4 bg-muted/60 rounded-md shadow overflow-hidden">
             <iframe
-              src={NEWS_URL}
+              src={newsIframeSrc}
               title="News Updates"
               width="100%"
               height="55px"
@@ -285,4 +283,3 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
-
