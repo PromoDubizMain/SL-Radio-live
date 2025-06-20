@@ -122,12 +122,11 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load();
+        audioRef.current.load(); // Ensure stream is loaded if src changed
       }
-      // Check if paused before playing, especially after src might have been set
-      if (audioRef.current.paused) {
-        // If stream was paused or just loaded, ensure load() is called before play() for live streams
-        audioRef.current.load(); 
+      
+      if (audioRef.current.paused) { // Only play if actually paused
+        audioRef.current.load(); // Important for live streams when resuming
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
@@ -143,11 +142,11 @@ export default function RadioPlayerPage() {
         });
       }
     } else {
-      if (!audioRef.current.paused) {
+      if (!audioRef.current.paused) { // Only pause if actually playing
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn, toast]);
+  }, [isPlaying, isRadioOn]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -191,7 +190,7 @@ export default function RadioPlayerPage() {
             data-ai-hint="radio logo"
             priority
           />
-          <CardTitle className="text-xl font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
+          <CardTitle className="text-lg font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8 pt-6 pb-8">
           <div className="flex items-center justify-between px-2 py-3 bg-muted/50 rounded-lg">
@@ -251,6 +250,13 @@ export default function RadioPlayerPage() {
               </a>
             </Button>
           </div>
+
+          <div className="mt-6 p-3 bg-muted/60 rounded-md shadow">
+            <p className="text-sm text-center text-foreground/80 animate-pulse">
+              Latest News: SL Radio Middle East - Broadcasting live! Stay tuned for exciting programs.
+            </p>
+          </div>
+
         </CardContent>
       </Card>
     </div>
