@@ -11,13 +11,17 @@ import { Switch } from "@/components/ui/switch";
 import { Play, Pause, Volume2, Volume1, VolumeX, Power, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLogo from '@/components/images/Logo.png';
+import { fetchNewsUpdate } from '@/ai/flows/fetch-news-update-flow';
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
+const NEWS_URL = 'https://promodubiz.com/updates/index.php';
 
 export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50); // Percentage 0-100
+  const [news, setNews] = useState<string | null>(null);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
@@ -122,16 +126,18 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); // Ensure stream is loaded if src changed
+        audioRef.current.load(); 
       }
       
-      if (audioRef.current.paused) { // Only play if actually paused
-        audioRef.current.load(); // Important for live streams when resuming
+      if (audioRef.current.paused) { 
+        audioRef.current.load(); 
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
           if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
             description = "Could not start radio playback due to mixed content. Ensure stream is HTTPS.";
+          } else if (error.name === 'NotSupportedError') {
+            description = "The audio format might not be supported by your browser or the stream is unavailable.";
           }
           toast({
             title: "Playback Error",
@@ -142,17 +148,38 @@ export default function RadioPlayerPage() {
         });
       }
     } else {
-      if (!audioRef.current.paused) { // Only pause if actually playing
+      if (!audioRef.current.paused) { 
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn]);
+  }, [isPlaying, isRadioOn, toast]);
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume / 100;
     }
   }, [volume]);
+
+  useEffect(() => {
+    async function loadNews() {
+      setIsLoadingNews(true);
+      try {
+        const result = await fetchNewsUpdate({ url: NEWS_URL });
+        setNews(result.newsUpdate);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setNews("Failed to load news updates.");
+        toast({
+          title: "News Update Error",
+          description: "Could not fetch the latest news.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingNews(false);
+      }
+    }
+    loadNews();
+  }, [toast]);
 
   const toggleRadioOn = useCallback(() => {
     setIsRadioOn(prevIsRadioOn => {
@@ -187,7 +214,6 @@ export default function RadioPlayerPage() {
             width={128} 
             height={128} 
             className="rounded-lg"
-            data-ai-hint="radio logo"
             priority
           />
           <CardTitle className="text-lg font-headline mt-4 text-center">SL Radio Middle East</CardTitle>
@@ -252,8 +278,8 @@ export default function RadioPlayerPage() {
           </div>
 
           <div className="mt-6 p-3 bg-muted/60 rounded-md shadow">
-            <p className="text-sm text-center text-foreground/80 animate-pulse">
-              Latest News: SL Radio Middle East - Broadcasting live! Stay tuned for exciting programs.
+            <p className={`text-sm text-center text-foreground/80 ${isLoadingNews ? 'animate-pulse' : ''}`}>
+              {isLoadingNews ? "Loading news..." : news || "No news updates available."}
             </p>
           </div>
 
