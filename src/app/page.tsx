@@ -117,7 +117,7 @@ export default function RadioPlayerPage() {
       }
       if (audioRef.current.src) {
         audioRef.current.src = '';
-        audioRef.current.load(); 
+        // audioRef.current.load(); // Removed to prevent "Empty src attribute" error
       }
     }
   }, [isRadioOn]);
@@ -128,11 +128,11 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); // Load new source
+        audioRef.current.load(); 
       }
       
       if (audioRef.current.paused) { 
-        audioRef.current.load(); // Important for resuming live streams
+        audioRef.current.load(); 
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
@@ -142,7 +142,7 @@ export default function RadioPlayerPage() {
             description = "The audio format might not be supported by your browser or the stream is unavailable.";
           } else if (error.name === 'AbortError' && audioRef.current?.src === '') {
              console.warn("Play aborted, likely due to src being cleared during radio off.");
-             return; // Benign if src was cleared intentionally
+             return; 
           }
           toast({
             title: "Playback Error",
@@ -277,3 +277,4 @@ export default function RadioPlayerPage() {
     </div>
   );
 }
+
