@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Play, Pause, Volume2, Volume1, VolumeX, Power, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLogo from '@/components/images/Logo.png';
-import { fetchNewsUpdate } from '@/ai/flows/fetch-news-update-flow';
 
 const STREAM_URL = 'https://a9.asurahosting.com/listen/sl_radio_middle_east/radio.mp3';
 const NEWS_URL = 'https://promodubiz.com/updates/index.php';
@@ -20,8 +19,6 @@ export default function RadioPlayerPage() {
   const [isRadioOn, setIsRadioOn] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50); // Percentage 0-100
-  const [news, setNews] = useState<string | null>(null);
-  const [isLoadingNews, setIsLoadingNews] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
@@ -112,7 +109,9 @@ export default function RadioPlayerPage() {
         audioRef.current.load();
       }
     } else {
-      audioRef.current.pause();
+      if (!audioRef.current.paused) {
+        audioRef.current.pause();
+      }
       if (audioRef.current.src) {
         audioRef.current.src = '';
         audioRef.current.load(); 
@@ -126,9 +125,7 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); 
       }
-      
       if (audioRef.current.paused) { 
         audioRef.current.load(); 
         audioRef.current.play().catch(error => {
@@ -160,27 +157,6 @@ export default function RadioPlayerPage() {
     }
   }, [volume]);
 
-  useEffect(() => {
-    async function loadNews() {
-      setIsLoadingNews(true);
-      try {
-        const result = await fetchNewsUpdate({ url: NEWS_URL });
-        setNews(result.newsUpdate);
-      } catch (error) {
-        console.error("Error fetching news:", error);
-        setNews("Failed to load news updates.");
-        toast({
-          title: "News Update Error",
-          description: "Could not fetch the latest news.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingNews(false);
-      }
-    }
-    loadNews();
-  }, [toast]);
-
   const toggleRadioOn = useCallback(() => {
     setIsRadioOn(prevIsRadioOn => {
       const newIsRadioOn = !prevIsRadioOn;
@@ -195,8 +171,24 @@ export default function RadioPlayerPage() {
 
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return; 
-    setIsPlaying(prev => !prev);
-  }, [isRadioOn]);
+    
+    if (isPlaying) { // If currently playing, then pause
+        setIsPlaying(false);
+    } else { // If paused (and radio is on), then play
+        if (audioRef.current) {
+            audioRef.current.load(); // Reload the stream
+            audioRef.current.play().catch(error => {
+                console.error("Error attempting to play audio after pause:", error);
+                toast({
+                    title: "Playback Error",
+                    description: "Could not resume radio playback.",
+                    variant: "destructive",
+                });
+            });
+        }
+        setIsPlaying(true);
+    }
+  }, [isRadioOn, isPlaying, toast]);
 
   const handleVolumeChange = useCallback((newVolume: number[]) => {
     setVolume(newVolume[0]);
@@ -277,10 +269,15 @@ export default function RadioPlayerPage() {
             </Button>
           </div>
 
-          <div className="mt-6 p-3 bg-muted/60 rounded-md shadow">
-            <p className={`text-sm text-center text-foreground/80 ${isLoadingNews ? 'animate-pulse' : ''}`}>
-              {isLoadingNews ? "Loading news..." : news || "No news updates available."}
-            </p>
+          <div className="mt-6 p-0 bg-muted/60 rounded-md shadow overflow-hidden">
+            <iframe
+              src={NEWS_URL}
+              title="News Updates"
+              width="100%"
+              height="150px"
+              style={{ border: 'none' }}
+              sandbox="allow-scripts allow-same-origin"
+            />
           </div>
 
         </CardContent>
