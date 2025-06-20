@@ -149,7 +149,7 @@ export default function RadioPlayerPage() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn, toast]);
+  }, [isPlaying, isRadioOn]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -172,11 +172,11 @@ export default function RadioPlayerPage() {
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return; 
     
-    if (isPlaying) { // If currently playing, then pause
+    if (isPlaying) { 
         setIsPlaying(false);
-    } else { // If paused (and radio is on), then play
+    } else { 
         if (audioRef.current) {
-            audioRef.current.load(); // Reload the stream
+            audioRef.current.load(); 
             audioRef.current.play().catch(error => {
                 console.error("Error attempting to play audio after pause:", error);
                 toast({
@@ -269,7 +269,7 @@ export default function RadioPlayerPage() {
             </Button>
           </div>
 
-          <div className="mt-6 p-0 bg-muted/60 rounded-md shadow overflow-hidden">
+          <div className="mt-6 p-4 bg-muted/60 rounded-md shadow overflow-hidden">
             <iframe
               src={NEWS_URL}
               title="News Updates"
