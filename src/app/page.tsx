@@ -24,7 +24,9 @@ export default function RadioPlayerPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      audioRef.current = new Audio();
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
       audioRef.current.volume = volume / 100;
 
       const handleAudioError = (event: Event) => {
@@ -81,16 +83,17 @@ export default function RadioPlayerPage() {
         setIsRadioOn(false);
       };
 
-      audioRef.current.addEventListener('error', handleAudioError);
+      const currentAudio = audioRef.current;
+      currentAudio.addEventListener('error', handleAudioError);
 
       return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener('error', handleAudioError);
-          audioRef.current.pause();
-          if (audioRef.current.src) {
-            audioRef.current.src = '';
+        if (currentAudio) {
+          currentAudio.removeEventListener('error', handleAudioError);
+          currentAudio.pause();
+          if (currentAudio.src) {
+            currentAudio.src = '';
              try {
-              audioRef.current.load(); 
+              currentAudio.load(); 
             } catch (e) {
               console.warn("Error during audio cleanup load:", e);
             }
@@ -106,7 +109,7 @@ export default function RadioPlayerPage() {
     if (isRadioOn) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load();
+        audioRef.current.load(); 
       }
     } else {
       if (!audioRef.current.paused) {
@@ -125,9 +128,11 @@ export default function RadioPlayerPage() {
     if (isRadioOn && isPlaying) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
+        audioRef.current.load(); // Load new source
       }
+      
       if (audioRef.current.paused) { 
-        audioRef.current.load(); 
+        audioRef.current.load(); // Important for resuming live streams
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
@@ -135,6 +140,9 @@ export default function RadioPlayerPage() {
             description = "Could not start radio playback due to mixed content. Ensure stream is HTTPS.";
           } else if (error.name === 'NotSupportedError') {
             description = "The audio format might not be supported by your browser or the stream is unavailable.";
+          } else if (error.name === 'AbortError' && audioRef.current?.src === '') {
+             console.warn("Play aborted, likely due to src being cleared during radio off.");
+             return; // Benign if src was cleared intentionally
           }
           toast({
             title: "Playback Error",
@@ -149,7 +157,7 @@ export default function RadioPlayerPage() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn]);
+  }, [isPlaying, isRadioOn, toast]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -171,24 +179,8 @@ export default function RadioPlayerPage() {
 
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return; 
-    
-    if (isPlaying) { 
-        setIsPlaying(false);
-    } else { 
-        if (audioRef.current) {
-            audioRef.current.load(); 
-            audioRef.current.play().catch(error => {
-                console.error("Error attempting to play audio after pause:", error);
-                toast({
-                    title: "Playback Error",
-                    description: "Could not resume radio playback.",
-                    variant: "destructive",
-                });
-            });
-        }
-        setIsPlaying(true);
-    }
-  }, [isRadioOn, isPlaying, toast]);
+    setIsPlaying(prevIsPlaying => !prevIsPlaying);
+  }, [isRadioOn]);
 
   const handleVolumeChange = useCallback((newVolume: number[]) => {
     setVolume(newVolume[0]);
@@ -274,7 +266,7 @@ export default function RadioPlayerPage() {
               src={NEWS_URL}
               title="News Updates"
               width="100%"
-              height="150px"
+              height="55px"
               style={{ border: 'none' }}
               sandbox="allow-scripts allow-same-origin"
             />
