@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Play, Pause, Volume2, Volume1, VolumeX, Power } from "lucide-react";
+import { Play, Pause, Volume2, Volume1, VolumeX, Power, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLogo from '@/components/images/Logo.png';
 
@@ -103,14 +103,11 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn) {
-      // If radio is turned on, and src is not already set, set it and load.
-      // The play/pause effect will handle the actual .play() call.
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
         audioRef.current.load();
       }
     } else {
-      // Radio is turned off, pause and clear src
       audioRef.current.pause();
       if (audioRef.current.src) {
         audioRef.current.src = '';
@@ -123,15 +120,17 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn && isPlaying) {
-      // Radio is on and we want to play
       if (audioRef.current.src !== STREAM_URL) {
-        // This case should ideally be handled by the [isRadioOn] effect,
-        // but as a fallback, ensure src is set, load, and play.
         audioRef.current.src = STREAM_URL;
         audioRef.current.load();
+      }
+      // Check if paused before playing, especially after src might have been set
+      if (audioRef.current.paused) {
+        // If stream was paused or just loaded, ensure load() is called before play() for live streams
+        audioRef.current.load(); 
         audioRef.current.play().catch(error => {
-          console.error("Error attempting to play audio (src mismatch):", error);
-          let description = "Could not start radio playback. Stream setup issue.";
+          console.error("Error attempting to play audio:", error);
+          let description = "Could not start radio playback.";
           if (typeof window !== 'undefined' && window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
             description = "Could not start radio playback due to mixed content. Ensure stream is HTTPS.";
           }
@@ -142,27 +141,13 @@ export default function RadioPlayerPage() {
           });
           setIsPlaying(false);
         });
-      } else if (audioRef.current.paused) {
-        // Source is correct, and it's paused. Load then play for stream reliability.
-        audioRef.current.load(); 
-        audioRef.current.play().catch(error => {
-          console.error("Error attempting to resume audio playback:", error);
-          toast({
-            title: "Playback Error",
-            description: "Could not resume radio playback. The stream might have been interrupted or is unavailable.",
-            variant: "destructive",
-          });
-          setIsPlaying(false);
-        });
       }
-      // If src is correct and not paused, it's already playing or attempting to.
     } else {
-      // Radio is off, OR radio is on but isPlaying is false (so, pause)
       if (!audioRef.current.paused) {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, isRadioOn, toast, setIsPlaying]); // Added toast and setIsPlaying
+  }, [isPlaying, isRadioOn, toast]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -180,12 +165,12 @@ export default function RadioPlayerPage() {
       }
       return newIsRadioOn;
     });
-  }, [setIsRadioOn, setIsPlaying]); 
+  }, []); 
 
   const togglePlayPause = useCallback(() => {
     if (!isRadioOn) return; 
     setIsPlaying(prev => !prev);
-  }, [isRadioOn, setIsPlaying]);
+  }, [isRadioOn]);
 
   const handleVolumeChange = useCallback((newVolume: number[]) => {
     setVolume(newVolume[0]);
@@ -251,6 +236,20 @@ export default function RadioPlayerPage() {
               aria-label="Volume control"
               className="[&>span:first-child]:bg-primary/30 [&_[role=slider]]:bg-primary [&_[role=slider]]:hover:bg-primary/80 [&_[role=slider]]:focus-visible:ring-primary/50 disabled:opacity-50"
             />
+          </div>
+
+          <div>
+            <Button asChild className="w-full">
+              <a
+                href="https://wa.me/971544231299"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Contact via WhatsApp"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Contact via WhatsApp
+              </a>
+            </Button>
           </div>
         </CardContent>
       </Card>
