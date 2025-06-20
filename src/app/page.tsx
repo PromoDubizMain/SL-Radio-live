@@ -32,13 +32,18 @@ export default function RadioPlayerPage() {
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
         
+        // Enhanced check for "Empty src attribute" or similar "source not supported" when src is effectively empty.
+        // This error can occur during cleanup or rapid state changes.
         if (audioElement.error &&
             audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
-            audioElement.error.message && audioElement.error.message.includes("Empty src attribute") &&
-            !isRadioOn 
+            (!audioElement.src || audioElement.src === '' || (audioElement.error.message && audioElement.error.message.includes("Empty src attribute")))
         ) {
-          console.warn("Audio element reported 'Empty src attribute' while radio was already off. Likely a cleanup artifact.", audioElement.error);
+          console.warn(
+            "Audio Player: Encountered 'MEDIA_ERR_SRC_NOT_SUPPORTED' with an empty or unset 'src'. This is often a transient issue during cleanup or state transitions. Message: " + (audioElement.error.message || 'N/A'), 
+            audioElement.error
+          );
           if (isPlaying) setIsPlaying(false); 
+          // No user-facing toast or console.error for this specific benign case.
           return; 
         }
 
@@ -60,6 +65,8 @@ export default function RadioPlayerPage() {
                     toastMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
                     break;
                 case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                    // This case will now primarily handle genuine stream unavailability/format issues,
+                    // as "Empty src" is caught above.
                     toastMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
                     break;
                 default:
@@ -91,17 +98,13 @@ export default function RadioPlayerPage() {
           currentAudio.removeEventListener('error', handleAudioError);
           currentAudio.pause();
           if (currentAudio.src) {
-            currentAudio.src = '';
-             try {
-              currentAudio.load(); 
-            } catch (e) {
-              console.warn("Error during audio cleanup load:", e);
-            }
+            currentAudio.src = ''; // Clear src
+            // Do NOT call currentAudio.load() here as it can trigger MEDIA_ERR_SRC_NOT_SUPPORTED on an empty src.
           }
         }
       };
     }
-  }, [toast, isRadioOn, isPlaying]); 
+  }, [toast, isRadioOn, isPlaying]); // isRadioOn and isPlaying are dependencies that can trigger cleanup/re-setup
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -117,7 +120,7 @@ export default function RadioPlayerPage() {
       }
       if (audioRef.current.src) {
         audioRef.current.src = '';
-        // audioRef.current.load(); // Removed to prevent "Empty src attribute" error
+        // No audioRef.current.load() here either after clearing src for radio off.
       }
     }
   }, [isRadioOn]);
@@ -126,13 +129,11 @@ export default function RadioPlayerPage() {
     if (!audioRef.current) return;
 
     if (isRadioOn && isPlaying) {
-      if (audioRef.current.src !== STREAM_URL) {
+      if (audioRef.current.src !== STREAM_URL) { // Ensure src is set if radio was just turned on
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); 
       }
-      
       if (audioRef.current.paused) { 
-        audioRef.current.load(); 
+        audioRef.current.load(); // Important: load before play for streams
         audioRef.current.play().catch(error => {
           console.error("Error attempting to play audio:", error);
           let description = "Could not start radio playback.";
@@ -140,8 +141,8 @@ export default function RadioPlayerPage() {
             description = "Could not start radio playback due to mixed content. Ensure stream is HTTPS.";
           } else if (error.name === 'NotSupportedError') {
             description = "The audio format might not be supported by your browser or the stream is unavailable.";
-          } else if (error.name === 'AbortError' && audioRef.current?.src === '') {
-             console.warn("Play aborted, likely due to src being cleared during radio off.");
+          } else if (error.name === 'AbortError' && (!audioRef.current || audioRef.current.src === '')) {
+             console.warn("Play aborted, likely due to src being cleared during radio off/cleanup.");
              return; 
           }
           toast({
@@ -169,16 +170,23 @@ export default function RadioPlayerPage() {
     setIsRadioOn(prevIsRadioOn => {
       const newIsRadioOn = !prevIsRadioOn;
       if (newIsRadioOn) {
-        setIsPlaying(true); 
+        // If turning on, and it's not already playing (e.g. first time on)
+        // set isPlaying to true. The useEffect for isPlaying will handle play().
+        if (!isPlaying) setIsPlaying(true); 
       } else {
+        // If turning off, always set isPlaying to false.
         setIsPlaying(false); 
       }
       return newIsRadioOn;
     });
-  }, []); 
+  }, [isPlaying]); // Added isPlaying dependency
 
   const togglePlayPause = useCallback(() => {
-    if (!isRadioOn) return; 
+    if (!isRadioOn) { // If radio is off, this button shouldn't change isPlaying
+        // Potentially turn radio on if play is pressed when radio is off?
+        // For now, it only works if radio is already on.
+        return;
+    }
     setIsPlaying(prevIsPlaying => !prevIsPlaying);
   }, [isRadioOn]);
 
