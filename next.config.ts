@@ -25,6 +25,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    // This prevents the Next.js dev server from restarting when
+    // files are changed in the .firebase/ and .vscode/ directories.
+    const ignored = Array.isArray(config.watchOptions.ignored)
+      ? config.watchOptions.ignored
+      : config.watchOptions.ignored
+      ? [config.watchOptions.ignored]
+      : [];
+    config.watchOptions.ignored = [
+      ...ignored,
+      '**/.firebase/**',
+      '**/.vscode/**',
+    ];
+    return config;
+  },
 };
 
 export default nextConfig;
