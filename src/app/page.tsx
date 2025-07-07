@@ -188,7 +188,7 @@ export default function RadioPlayerPage() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setNewsIframeSrc(`${NEWS_URL_BASE}?timestamp=${new Date().getTime()}`);
-    }, 60000); // 60000 milliseconds = 1 minute
+    }, 600000); // 60000 milliseconds = 1 minute
 
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []);
