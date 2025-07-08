@@ -33,57 +33,56 @@ export default function RadioPlayerPage() {
       const handleAudioError = (event: Event) => {
         const audioElement = event.target as HTMLAudioElement;
         
-        if (audioElement.error &&
-            audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
-            (!audioElement.src || audioElement.src === '' || (audioElement.error.message && audioElement.error.message.includes("Empty src attribute")))
-        ) {
-          console.warn(
-            "Audio Player: Encountered 'MEDIA_ERR_SRC_NOT_SUPPORTED' with an empty or unset 'src'. This is often a transient issue during cleanup or state transitions. Message: " + (audioElement.error.message || 'N/A'), 
-            audioElement.error
-          );
-          if (isPlaying) setIsPlaying(false); 
-          return; 
+        // Guard against build-time errors and suppress errors for empty src
+        if (typeof MediaError !== 'undefined' && audioElement.error) {
+          if (
+              audioElement.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
+              (!audioElement.src || audioElement.src === '' || (audioElement.error.message && audioElement.error.message.includes("Empty src attribute")))
+          ) {
+            console.warn(
+              "Audio Player: Encountered 'MEDIA_ERR_SRC_NOT_SUPPORTED' with an empty or unset 'src'. This is often a transient issue during cleanup or state transitions. Message: " + (audioElement.error.message || 'N/A'), 
+              audioElement.error
+            );
+            if (isPlaying) setIsPlaying(false); 
+            return; 
+          }
+
+          let toastMessage = "An unknown audio error occurred.";
+          let rawErrorObject: MediaError | null = audioElement.error;
+          let errorCode: number | null = rawErrorObject.code;
+          
+          switch (errorCode) {
+              case MediaError.MEDIA_ERR_ABORTED:
+                  toastMessage = "Audio playback aborted by user.";
+                  break;
+              case MediaError.MEDIA_ERR_NETWORK:
+                  toastMessage = "A network error caused audio download to fail. Please check your internet connection and the stream availability.";
+                  break;
+              case MediaError.MEDIA_ERR_DECODE:
+                  toastMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
+                  break;
+              case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                  toastMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
+                  break;
+              default:
+                  toastMessage = `An audio error occurred (code: ${errorCode}).`;
+          }
+
+          let consoleLogMessage = `Audio Player Error: ${toastMessage}`;
+          if (rawErrorObject) {
+            consoleLogMessage += ` (Raw MediaError code: ${errorCode}, message: ${rawErrorObject.message})`;
+          }
+          
+          console.error(consoleLogMessage, rawErrorObject || '(No MediaError object)');
+
+          toast({
+            title: "Radio Error",
+            description: toastMessage,
+            variant: "destructive",
+          });
+          setIsPlaying(false);
+          setIsRadioOn(false);
         }
-
-        let toastMessage = "An unknown audio error occurred.";
-        let rawErrorObject: MediaError | null = null;
-        let errorCode: number | null = null;
-
-        if (audioElement.error) {
-            rawErrorObject = audioElement.error;
-            errorCode = rawErrorObject.code;
-            switch (errorCode) {
-                case MediaError.MEDIA_ERR_ABORTED:
-                    toastMessage = "Audio playback aborted by user.";
-                    break;
-                case MediaError.MEDIA_ERR_NETWORK:
-                    toastMessage = "A network error caused audio download to fail. Please check your internet connection and the stream availability.";
-                    break;
-                case MediaError.MEDIA_ERR_DECODE:
-                    toastMessage = "Audio playback aborted due to a decoding problem. The stream format might be incompatible.";
-                    break;
-                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    toastMessage = "Audio source not supported or stream unavailable. This can happen if the stream is down, the format is unsupported, or due to mixed content issues (HTTP stream on an HTTPS page).";
-                    break;
-                default:
-                    toastMessage = `An audio error occurred (code: ${errorCode}).`;
-            }
-        }
-
-        let consoleLogMessage = `Audio Player Error: ${toastMessage}`;
-        if (rawErrorObject) {
-          consoleLogMessage += ` (Raw MediaError code: ${errorCode}, message: ${rawErrorObject.message})`;
-        }
-        
-        console.error(consoleLogMessage, rawErrorObject || '(No MediaError object)');
-
-        toast({
-          title: "Radio Error",
-          description: toastMessage,
-          variant: "destructive",
-        });
-        setIsPlaying(false);
-        setIsRadioOn(false);
       };
 
       const currentAudio = audioRef.current;
@@ -107,7 +106,6 @@ export default function RadioPlayerPage() {
     if (isRadioOn) {
       if (audioRef.current.src !== STREAM_URL) {
         audioRef.current.src = STREAM_URL;
-        audioRef.current.load(); 
       }
     } else {
       if (!audioRef.current.paused) {
@@ -188,9 +186,9 @@ export default function RadioPlayerPage() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setNewsIframeSrc(`${NEWS_URL_BASE}?timestamp=${new Date().getTime()}`);
-    }, 600000); // 60000 milliseconds = 1 minute
+    }, 60000); 
 
-    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
 

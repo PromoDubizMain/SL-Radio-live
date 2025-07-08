@@ -5,7 +5,7 @@ A simple, clean, and modern web-based radio player for listening to SL Radio Mid
 ## Features
 
 - **Live Radio Stream:** Play and pause the live audio stream.
-- **Power Toggle:** Turn the radio stream connection on or off.
+- **Power Toggle:** Turn the stream connection on or off.
 - **Volume Control:** Adjust the playback volume with a slider.
 - **Live News Bar:** Displays the latest updates directly from the news source.
 - **Contact Button:** Easily get in touch via WhatsApp.
@@ -18,7 +18,7 @@ A simple, clean, and modern web-based radio player for listening to SL Radio Mid
 - **UI:** [React](https://react.dev/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components:** [ShadCN UI](https://ui.shadcn.com/)
-- **Deployment:** [Firebase App Hosting](https://firebase.google.com/docs/app-hosting)
+- **Deployment:** [Firebase Hosting](https://firebase.google.com/docs/hosting)
 
 ## Getting Started
 
@@ -44,7 +44,7 @@ To run this project locally, follow these steps:
 
 ## Deployment
 
-This application is configured for easy deployment with Firebase App Hosting.
+This application is configured for easy deployment with Firebase Hosting.
 
 1.  **Install the Firebase CLI:**
     ```bash
@@ -58,5 +58,15 @@ This application is configured for easy deployment with Firebase App Hosting.
 
 3.  **Deploy the app:**
     ```bash
-    firebase deploy --only apphosting
+    npm run deploy
     ```
+
+## Troubleshooting
+
+### "Site Not Found" after deploying
+
+If you see a "Site Not Found" page after a successful deployment, it is often due to caching. Please try the following:
+
+- **Hard Refresh:** Clear your browser's cache for the site. (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows).
+- **Incognito Window:** Open your site URL in a private or incognito window.
+- **Wait:** It can sometimes take a few minutes for a new deployment to be available everywhere.
